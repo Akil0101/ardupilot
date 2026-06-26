@@ -56,6 +56,11 @@ jobs:
         run: |
           ./waf configure --board FlywooGOKUF722ProMiniV2 --bootloader
           ./waf bootloader
+          # The application build embeds the bootloader so the FC can
+          # self-update it. ArduPilot looks for Tools/bootloaders/<board>_bl.bin.
+          mkdir -p Tools/bootloaders
+          cp build/FlywooGOKUF722ProMiniV2/bin/AP_Bootloader.bin \
+             Tools/bootloaders/FlywooGOKUF722ProMiniV2_bl.bin
 
       - name: Build ArduCopter
         run: |
