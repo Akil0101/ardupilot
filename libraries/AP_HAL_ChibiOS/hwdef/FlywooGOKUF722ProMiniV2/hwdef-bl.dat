@@ -52,4 +52,4 @@ define HAL_LED_ON 0
 # Bootloader keeps storage empty (params live in the application region)
 # -----------------------------------------------------------------------
 define HAL_USE_EMPTY_STORAGE 1
-define HAL_STORAGE_SIZE 16384
+define HAL_STORAGE_SIZE 15360
