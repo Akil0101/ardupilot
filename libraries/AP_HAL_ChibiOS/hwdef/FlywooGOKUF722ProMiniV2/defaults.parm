@@ -1,0 +1,167 @@
+# Default parameters for Flywoo GOKU F722 PRO MINI V2
+# Load via Mission Planner: Config → Full Parameter List → Load from file
+# Or embed automatically via DEFAULTS_FILE in hwdef.dat
+
+# -----------------------------------------------------------------------
+# Frame
+# -----------------------------------------------------------------------
+FRAME_CLASS 1   # 1=Quad
+FRAME_TYPE 1    # 1=X
+
+# -----------------------------------------------------------------------
+# Battery monitor — ADC3: VBAT=PC1 (GPIO12), CURR=PC0 (GPIO13)
+# Voltage divider 11:1; current sensor ~17 A/V (ibata_scale=170)
+# IMPORTANT: Calibrate BATT_VOLT_MULT against a known voltage before flight.
+# -----------------------------------------------------------------------
+BATT_MONITOR 4          # Analog voltage + current
+BATT_VOLT_PIN 12        # GPIO12 → PC1 → ADC3_IN11
+BATT_CURR_PIN 13        # GPIO13 → PC0 → ADC3_IN10
+BATT_VOLT_MULT 11.0
+BATT_AMP_PERVLT 17.0
+BATT_AMP_OFFSET 0.0
+BATT_CAPACITY 1300      # Adjust for your battery
+
+# -----------------------------------------------------------------------
+# INS / IMU — ICM42688P
+# Fast sampling: gyro at 8 kHz, accel at 4 kHz
+# -----------------------------------------------------------------------
+INS_FAST_SAMPLE 3
+INS_GYRO_FILTER 120
+INS_ACCEL_FILTER 40
+INS_LOG_BAT_MASK 3
+
+# -----------------------------------------------------------------------
+# Barometer — DPS310 on I2C1
+# -----------------------------------------------------------------------
+BARO_PROBE_EXT 0
+
+# -----------------------------------------------------------------------
+# Compass — no onboard compass; external only (on I2C1 pads)
+# -----------------------------------------------------------------------
+COMPASS_ENABLE 1
+COMPASS_EXTERNAL 1
+COMPASS_USE 1
+COMPASS_USE2 0
+COMPASS_USE3 0
+COMPASS_AUTO_ROT 2
+
+# -----------------------------------------------------------------------
+# OSD — MAX7456 (AT7456E)
+# -----------------------------------------------------------------------
+OSD_TYPE 1              # 1 = MAX7456
+
+# -----------------------------------------------------------------------
+# Logging — W25Q128FV SPI flash (16 MB)
+# -----------------------------------------------------------------------
+LOG_BACKEND_TYPE 2      # 2 = DataFlash (SPI flash)
+LOG_DISARMED 0
+LOG_REPLAY 1
+LOG_FILE_DSRMX 100
+
+# -----------------------------------------------------------------------
+# Serial port roles
+# Adjust these to match your wiring
+# -----------------------------------------------------------------------
+# SERIAL0 = USB (leave default)
+
+# SERIAL1 = USART1 — RC input
+# Change protocol to 23 (RCIN) for SBUS, or to 9 (Frsky/CRSF) for ELRS
+SERIAL1_PROTOCOL 23     # RCIN (SBUS / inverted serial)
+SERIAL1_BAUD 100        # 100 kbaud for SBUS
+
+# SERIAL2 = USART2 — GPS
+SERIAL2_PROTOCOL 5      # GPS
+SERIAL2_BAUD 38         # 38400 for most NMEA GPS; use 115 for U-blox config
+
+# SERIAL3 = USART3 — Telemetry (MAVLink)
+SERIAL3_PROTOCOL 1      # MAVLink1
+SERIAL3_BAUD 57         # 57600
+
+# SERIAL4 = UART4 — ESC telemetry (KISS/BLHeli32 / AM32)
+SERIAL4_PROTOCOL 16     # ESC telemetry
+SERIAL4_BAUD 115        # 115200
+
+# SERIAL5 = UART5 — available for SmartAudio/Tramp/MSP
+SERIAL5_PROTOCOL 26     # SmartAudio (VTX control)
+SERIAL5_BAUD 4          # SmartAudio: 4800 baud
+
+# SERIAL6 = USART6 — reserved / MSP for DJI OSD
+SERIAL6_PROTOCOL 32     # MSP
+SERIAL6_BAUD 115        # 115200
+
+# -----------------------------------------------------------------------
+# RC input
+# -----------------------------------------------------------------------
+RC_PROTOCOLS 1          # 1 = All (auto-detect); set to 64 for SBUS only
+                        # or to 512 for CRSF/ELRS
+
+# For ELRS / CRSF on USART1:
+# SERIAL1_PROTOCOL 23  # RCIN
+# SERIAL1_BAUD 420     # 420 kbaud (CRSF standard)
+
+# -----------------------------------------------------------------------
+# ESC / Motor output
+# -----------------------------------------------------------------------
+MOT_PWM_TYPE 6          # 6 = DShot600
+MOT_SPIN_MIN 0.15
+MOT_SPIN_ARM 0.10
+MOT_SPIN_MAX 0.95
+MOT_THST_EXPO 0.65
+MOT_THST_HOVER 0.35
+
+# -----------------------------------------------------------------------
+# Bidirectional DShot (RPM telemetry from ESC)
+# Requires ESC firmware that supports it (BLHeli32 / AM32 / BLHeli_S JESC)
+# -----------------------------------------------------------------------
+SERVO_BLH_BDMASK 255    # All 8 motors — set to 0 to disable
+SERVO_BLH_AUTO 1
+
+# -----------------------------------------------------------------------
+# GPS
+# -----------------------------------------------------------------------
+GPS_TYPE 1              # Auto
+GPS_AUTO_CONFIG 1
+
+# -----------------------------------------------------------------------
+# VTX power relay — PB0 exposed as GPIO81
+# Map to a relay function via RC channel or scripting
+# -----------------------------------------------------------------------
+RELAY1_PIN 81           # PB0 → VTX power PINIO
+
+# -----------------------------------------------------------------------
+# Safety & arming
+# -----------------------------------------------------------------------
+ARMING_CHECK 1
+BRD_SAFETY_DEFLT 0      # No hardware safety switch on mini FC
+
+# -----------------------------------------------------------------------
+# PID — starting point for 5" quad; tune for your airframe
+# -----------------------------------------------------------------------
+ATC_RAT_RLL_P 0.135
+ATC_RAT_RLL_I 0.135
+ATC_RAT_RLL_D 0.0036
+ATC_RAT_PIT_P 0.135
+ATC_RAT_PIT_I 0.135
+ATC_RAT_PIT_D 0.0036
+ATC_RAT_YAW_P 0.18
+ATC_RAT_YAW_I 0.018
+ATC_RAT_YAW_D 0.0
+
+# -----------------------------------------------------------------------
+# Notch filter — motor noise (adjust FREQ to motor KV / battery voltage)
+# Enable INS_HNTCH_MODE 5 for RPM-based (requires BiDir DShot telemetry)
+# -----------------------------------------------------------------------
+INS_HNTCH_ENABLE 1
+INS_HNTCH_FREQ 200
+INS_HNTCH_BW 40
+INS_HNTCH_ATT 40
+INS_HNTCH_MODE 5        # RPM sensor (BiDir DShot)
+INS_HNTCH_OPTS 2        # double-notch
+
+# -----------------------------------------------------------------------
+# RSSI
+# -----------------------------------------------------------------------
+RSSI_TYPE 1             # 1 = Analog pin
+RSSI_ANA_PIN 14         # GPIO14 → PC2 → ADC3_IN12
+RSSI_PIN_LOW 0
+RSSI_PIN_HIGH 3.3
