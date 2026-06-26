@@ -218,15 +218,17 @@ define HAL_BUZZER_ON  1
 PB0 VTX_PWR OUTPUT GPIO(81)
 
 # -----------------------------------------------------------------------
-# ADC — ADC3 instance. Channel numbers from STM32F732xx pin table:
+# ADC — PC0/PC1/PC2 are ADC123 pins (tied to ADC1/2/3). Betaflight uses
+# ADC3, but ArduPilot's STM32F732xx module only maps ADC1; the same
+# physical pins are read identically via ADC1 with the same channels:
 #   PC0=ch10 (CURR), PC1=ch11 (VBAT), PC2=ch12 (RSSI)
 #
 # Voltage divider 11:1 → BATT_VOLT_SCALE 11.0
 # Current: Betaflight ibata_scale=170 → BATT_CURR_SCALE 17.0 A/V
 # -----------------------------------------------------------------------
-PC1 BATT_VOLTAGE_SENS ADC3 SCALE(1)
-PC0 BATT_CURRENT_SENS ADC3 SCALE(1)
-PC2 RSSI_ADC          ADC3 SCALE(1)
+PC1 BATT_VOLTAGE_SENS ADC1 SCALE(1)
+PC0 BATT_CURRENT_SENS ADC1 SCALE(1)
+PC2 RSSI_ADC          ADC1 SCALE(1)
 
 define HAL_BATT_VOLT_PIN   11
 define HAL_BATT_CURR_PIN   10
