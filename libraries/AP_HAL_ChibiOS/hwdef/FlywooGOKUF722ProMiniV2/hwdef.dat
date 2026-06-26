@@ -30,6 +30,10 @@ APJ_BOARD_ID AP_HW_FLYWOOF722PROMINI_V2
 # Crystal: 8 MHz external (standard for Flywoo F7 series)
 OSCILLATOR_HZ 8000000
 
+# ChibiOS uses TIM2 for its RTOS system tick by default, but TIM2 drives
+# motors M3/M4 here. Move the system tick to TIM5 (a free 32-bit timer).
+STM32_ST_USE_TIMER 5
+
 FLASH_SIZE_KB 512
 
 # Reserve the first 64 KB at the front of flash:
