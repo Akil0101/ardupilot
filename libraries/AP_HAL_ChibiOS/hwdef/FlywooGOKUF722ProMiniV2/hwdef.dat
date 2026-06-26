@@ -58,8 +58,9 @@ USB_STRING_PRODUCT "GOKU-F722-Pro-Mini-V2"
 # Cortex-M7 double-precision FPU is present on F722
 define HAL_HAVE_HARDWARE_DOUBLE 1
 
-# Enable bidirectional DShot (each motor has a unique DMA stream)
-define HAL_WITH_BIDIR_DSHOT 1
+# Note: bidirectional DShot is intentionally not enabled here. It requires
+# per-channel BIDIR markings (extra input-capture DMA); standard DShot600
+# RPM-less operation is used. Enable later by adding BIDIR to motor lines.
 
 # -----------------------------------------------------------------------
 # Peripheral ordering
