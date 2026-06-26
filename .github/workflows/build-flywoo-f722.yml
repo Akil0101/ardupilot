@@ -1,0 +1,78 @@
+name: Build Flywoo GOKU F722 PRO MINI V2
+
+# Builds a real, flashable ArduCopter.apj for the new board using
+# ArduPilot's official ChibiOS build container. The .apj is uploaded
+# as a downloadable artifact.
+#
+# HOW TO USE:
+#   1. Fork https://github.com/ArduPilot/ardupilot  (your own fork)
+#   2. Copy libraries/AP_HAL_ChibiOS/hwdef/FlywooGOKUF722ProMiniV2/
+#      into the fork (same path).
+#   3. Copy THIS file to .github/workflows/build-flywoo-f722.yml in the fork.
+#   4. Commit & push. Actions tab → run "Build Flywoo GOKU F722 PRO MINI V2".
+#   5. Download the artifact "FlywooGOKUF722ProMiniV2-firmware".
+#      It contains ArduCopter.apj / .bin / .hex and AP_Bootloader.bin.
+
+on:
+  workflow_dispatch:        # manual "Run workflow" button
+  push:
+    paths:
+      - 'libraries/AP_HAL_ChibiOS/hwdef/FlywooGOKUF722ProMiniV2/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    container: ardupilot/ardupilot-dev-chibios:latest
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Register board ID
+        run: |
+          # Modern ArduPilot keeps board IDs in Tools/AP_Bootloader/board_types.txt
+          # (the hwdef parser reads APJ_BOARD_ID from there). Fall back to the
+          # legacy header if that file is absent on older branches.
+          BT=Tools/AP_Bootloader/board_types.txt
+          if [ -f "$BT" ]; then
+            if ! grep -q 'AP_HW_FLYWOOF722PROMINI_V2' "$BT"; then
+              # Pick 1051 if free, else max existing numeric id + 1
+              if grep -qE '[[:space:]]1051$' "$BT"; then
+                ID=$(awk '{print $NF}' "$BT" | grep -E '^[0-9]+$' | sort -n | tail -1)
+                ID=$((ID+1))
+              else
+                ID=1051
+              fi
+              echo "AP_HW_FLYWOOF722PROMINI_V2 $ID" >> "$BT"
+              echo "Registered AP_HW_FLYWOOF722PROMINI_V2 = $ID in board_types.txt"
+            fi
+          else
+            grep -q AP_HW_FLYWOOF722PROMINI_V2 Tools/AP_Bootloader/AP_Bootloader.h \
+              || echo '#define AP_HW_FLYWOOF722PROMINI_V2 1051' >> Tools/AP_Bootloader/AP_Bootloader.h
+          fi
+
+      - name: Build bootloader
+        run: |
+          ./waf configure --board FlywooGOKUF722ProMiniV2 --bootloader
+          ./waf bootloader
+
+      - name: Build ArduCopter
+        run: |
+          ./waf configure --board FlywooGOKUF722ProMiniV2
+          ./waf copter
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p out
+          cp build/FlywooGOKUF722ProMiniV2/bin/ArduCopter.apj out/ || true
+          cp build/FlywooGOKUF722ProMiniV2/bin/ArduCopter.bin out/ || true
+          cp build/FlywooGOKUF722ProMiniV2/bin/ArduCopter.hex out/ || true
+          cp build/FlywooGOKUF722ProMiniV2/bin/AP_Bootloader.bin out/ || true
+          ls -l out
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlywooGOKUF722ProMiniV2-firmware
+          path: out/*
