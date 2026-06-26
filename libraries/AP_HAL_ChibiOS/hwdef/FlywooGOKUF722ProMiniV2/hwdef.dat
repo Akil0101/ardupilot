@@ -18,7 +18,11 @@
 # -----------------------------------------------------------------------
 # MCU
 # -----------------------------------------------------------------------
-MCU STM32F7xx STM32F722xx
+# ArduPilot represents STM32F722 silicon with the STM32F732xx module
+# (the F732 is the F722 plus a crypto unit — identical pinout, DMA, clocks,
+# 512KB flash, 256KB RAM). This is the same MCU line used by other F722
+# boards in ArduPilot (e.g. FreeflyRTK).
+MCU STM32F7xx STM32F732xx
 
 # Board ID — register AP_HW_FLYWOOF722PROMINI_V2 = 1051 in AP_BoardConfig.h
 APJ_BOARD_ID AP_HW_FLYWOOF722PROMINI_V2
@@ -152,7 +156,7 @@ define HAL_DEFAULT_INS_FAST_SAMPLE 3
 # baro_i2c_device=1 with no address override → default 0x77
 # INAV also uses BUS_I2C1 with same address
 # -----------------------------------------------------------------------
-BARO DPS280 I2C:0:0x77
+BARO DPS310 I2C:0:0x77
 
 # -----------------------------------------------------------------------
 # OSD — MAX7456 / AT7456E compatible
@@ -258,12 +262,12 @@ define BOARD_RSSI_ANA_PIN 14
 DMA_PRIORITY TIM3_CH4 TIM3_CH1 TIM2_CH2 TIM2_CH1 TIM8_CH3 TIM8_CH4 TIM4_CH1 TIM4_CH2 TIM1_CH1 SPI1_RX SPI1_TX SPI2_RX SPI2_TX SPI3_RX SPI3_TX ADC3
 
 # -----------------------------------------------------------------------
-# Default RC input — SERIAL1 (USART1) with SBUS inverted RX
-# ELRS/CRSF users change SERIAL1_PROTOCOL to 23 and BAUD to 420
+# Default RC input — SERIAL1 (USART1)
+# USB (SERIAL0) stays MAVLink2 by default for Mission Planner.
+# ELRS/CRSF users change SERIAL1 baud to 420000; SBUS users add
+# SERIAL1_OPTIONS bit for RX inversion if no external inverter is fitted.
 # -----------------------------------------------------------------------
-define HAL_OTG1_PROTOCOL SerialProtocol_None
 define DEFAULT_SERIAL1_PROTOCOL SerialProtocol_RCIN
-define DEFAULT_SERIAL1_BAUD 100000
 
 # -----------------------------------------------------------------------
 # Compass — no onboard compass; auto-detection on I2C1 for external
