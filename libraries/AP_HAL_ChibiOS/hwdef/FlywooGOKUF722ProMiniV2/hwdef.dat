@@ -1,0 +1,288 @@
+# hw definition file for Flywoo GOKU F722 PRO MINI V2 (20x20)
+#
+# Hardware summary:
+#   MCU:      STM32F722RET6 (Cortex-M7, 512KB flash, 256KB RAM, 216MHz)
+#   IMU:      ICM42688P  on SPI1, CS=PA4,  INT=PC3,  rotation=CW270
+#   Baro:     DPS310     on I2C1 (PB8/PB9), addr=0x77
+#   OSD:      MAX7456/AT7456E on SPI2, CS=PB12
+#   Flash:    W25Q128FV (16MB) on SPI3, CS=PC13
+#   UARTs:    6x hardware + USB VCP
+#   Motors:   8x DShot/PWM
+#   ADC:      ADC3 — VBAT(PC1), CURR(PC0), RSSI(PC2)
+#
+# Pin assignments verified against:
+#   Betaflight unified-target FLWO-FLYWOOF722PROV2.config
+#   Betaflight config/configs/FLYWOOF722PROV2/config.h
+#   INAV target/FLYWOOF722PRO/target.h + target.c
+
+# -----------------------------------------------------------------------
+# MCU
+# -----------------------------------------------------------------------
+MCU STM32F7xx STM32F722xx
+
+# Board ID — register AP_HW_FLYWOOF722PROMINI_V2 = 1051 in AP_BoardConfig.h
+APJ_BOARD_ID AP_HW_FLYWOOF722PROMINI_V2
+
+# Crystal: 8 MHz external (standard for Flywoo F7 series)
+OSCILLATOR_HZ 8000000
+
+FLASH_SIZE_KB 512
+
+# Bootloader occupies first 32 KB (sectors 0+1 on STM32F722)
+FLASH_RESERVE_START_KB 32
+
+# EEPROM emulation in flash sector 2 (16 KB at 0x08008000)
+STORAGE_FLASH_PAGE 2
+define HAL_STORAGE_SIZE 16384
+
+# USB strings
+USB_STRING_MANUFACTURER "Flywoo"
+USB_STRING_PRODUCT "GOKU-F722-Pro-Mini-V2"
+USB_STRING_NEWLINE_CONVENTION False
+
+# -----------------------------------------------------------------------
+# STM32 core features
+# -----------------------------------------------------------------------
+# Cortex-M7 double-precision FPU is present on F722
+define HAL_HAVE_HARDWARE_DOUBLE 1
+
+# F722 does not have FDCAN, so no HAL CAN-DSP
+define HAL_WITH_DSP 0
+
+# Enable bidirectional DShot (all 8 motors have unique DMA streams)
+define HAL_WITH_BIDIR_DSHOT 1
+
+# -----------------------------------------------------------------------
+# Peripheral ordering
+# -----------------------------------------------------------------------
+# SERIAL0 = USB, SERIAL1..6 = USART1..USART6
+SERIAL_ORDER OTG1 USART1 USART2 USART3 UART4 UART5 USART6
+
+# I2C buses (barometer + external magnetometer)
+I2C_ORDER I2C1
+
+# -----------------------------------------------------------------------
+# USB — PA11/PA12 are the fixed USB FS pins on STM32F722 LQFP64
+# -----------------------------------------------------------------------
+PA11 OTG_FS_DM OTG1
+PA12 OTG_FS_DP OTG1
+
+# -----------------------------------------------------------------------
+# SPI buses
+# -----------------------------------------------------------------------
+# SPI1 — ICM42688P (IMU)
+PA5 SPI1_SCK  SPI1
+PA6 SPI1_MISO SPI1
+PA7 SPI1_MOSI SPI1
+
+# SPI2 — MAX7456 (OSD)
+PB13 SPI2_SCK  SPI2
+PB14 SPI2_MISO SPI2
+PB15 SPI2_MOSI SPI2
+
+# SPI3 — W25Q128FV (blackbox flash)
+PC10 SPI3_SCK  SPI3
+PC11 SPI3_MISO SPI3
+PB5  SPI3_MOSI SPI3
+
+# -----------------------------------------------------------------------
+# SPI device registry
+#   Format: SPIDEV name bus devid cs_pin mode freq_low freq_high
+# -----------------------------------------------------------------------
+# ICM42688P: SPI MODE3, max 24 MHz data, 1 MHz register
+SPIDEV icm42688  SPI1 DEVID1 PA4  MODE3  2*MHZ  8*MHZ
+
+# MAX7456: SPI MODE0, max 10 MHz but run conservatively at 2 MHz
+SPIDEV osd       SPI2 DEVID1 PB12 MODE0  2*MHZ  2*MHZ
+
+# W25Q128FV: SPI MODE3, max 104 MHz device; STM32F722 SPI3 tops ~54 MHz
+SPIDEV dataflash SPI3 DEVID1 PC13 MODE3  2*MHZ 32*MHZ
+
+# -----------------------------------------------------------------------
+# I2C1 — barometer + external compass
+# -----------------------------------------------------------------------
+PB8 I2C1_SCL I2C1
+PB9 I2C1_SDA I2C1
+
+# -----------------------------------------------------------------------
+# UARTs
+# -----------------------------------------------------------------------
+# UART1 — default RC input (SBUS/ELRS/CRSF)
+PA9  USART1_TX USART1
+PA10 USART1_RX USART1
+
+# UART2 — GPS or telemetry
+PA2 USART2_TX USART2
+PA3 USART2_RX USART2
+
+# UART3 — GPS/telemetry/VTX
+PB10 USART3_TX USART3
+PB11 USART3_RX USART3
+
+# UART4 — ESC telemetry / SmartAudio
+PA0 UART4_TX UART4
+PA1 UART4_RX UART4
+
+# UART5 — ESC telemetry (Betaflight default)
+PC12 UART5_TX UART5
+PD2  UART5_RX UART5
+
+# UART6 — GPS or CRSF
+PC6 USART6_TX USART6
+PC7 USART6_RX USART6
+
+# -----------------------------------------------------------------------
+# IMU — ICM42688P (Invensense v3 driver)
+# Betaflight: gyro_1_align_yaw = 2700 → ROTATION_YAW_270
+# -----------------------------------------------------------------------
+IMU Invensensev3 SPI:icm42688 ROTATION_YAW_270
+
+# ICM42688P EXTI interrupt line
+PC3 INPUT FLOATING   # GYRO_1_EXTI — connected to ICM42688P INT1
+
+# Second gyro footprint present on PCB (GYRO_CS2=PB2, EXTI2=PC4) but
+# V2 only populates the ICM42688P at PA4/PC3. PB2 and PC4 left floating.
+
+# Fast sampling: 8 kHz gyro (matches Betaflight pid_process_denom=4 @32kHz)
+define HAL_DEFAULT_INS_FAST_SAMPLE 3
+
+# -----------------------------------------------------------------------
+# Barometer — DPS310 on I2C1
+# Both 0x76 and 0x77 used depending on SDO tie; Betaflight sets
+# baro_i2c_device=1 with no address override → default 0x77
+# INAV also uses BUS_I2C1 with same address
+# -----------------------------------------------------------------------
+BARO DPS280 I2C:0:0x77
+
+# -----------------------------------------------------------------------
+# OSD — MAX7456 / AT7456E compatible
+# -----------------------------------------------------------------------
+define OSD_ENABLED 1
+define HAL_OSD_TYPE_DEFAULT 1
+
+# -----------------------------------------------------------------------
+# Blackbox — W25Q128FV (128 Mbit = 16 MB)
+# JEDEC ID: EF 40 18
+# -----------------------------------------------------------------------
+define HAL_LOGGING_DATAFLASH_ENABLED 1
+
+# -----------------------------------------------------------------------
+# Motor outputs (PWM / DShot / BiDir-DShot)
+# All 8 motors verified against Betaflight timer.c and dma.c
+#
+# M1: PB1  → TIM3  CH4 AF2 → DMA1 Stream2  Ch5
+# M2: PB4  → TIM3  CH1 AF2 → DMA1 Stream4  Ch5
+# M3: PB3  → TIM2  CH2 AF1 → DMA1 Stream6  Ch3
+# M4: PA15 → TIM2  CH1 AF1 → DMA1 Stream5  Ch3
+# M5: PC8  → TIM8  CH3 AF3 → DMA2 Stream4  Ch7
+# M6: PC9  → TIM8  CH4 AF3 → DMA2 Stream7  Ch7
+# M7: PB6  → TIM4  CH1 AF2 → DMA1 Stream0  Ch2
+# M8: PB7  → TIM4  CH2 AF2 → DMA1 Stream3  Ch2
+#
+# No DMA stream is shared between motors — BiDir DShot supported on all 8.
+# -----------------------------------------------------------------------
+PB1  TIM3_CH4  OUTPUT PUSHPULL PULLDOWN SPEED_LOW GPIO(50)
+PB4  TIM3_CH1  OUTPUT PUSHPULL PULLDOWN SPEED_LOW GPIO(51)
+PB3  TIM2_CH2  OUTPUT PUSHPULL PULLDOWN SPEED_LOW GPIO(52)
+PA15 TIM2_CH1  OUTPUT PUSHPULL PULLDOWN SPEED_LOW GPIO(53)
+PC8  TIM8_CH3  OUTPUT PUSHPULL PULLDOWN SPEED_LOW GPIO(54)
+PC9  TIM8_CH4  OUTPUT PUSHPULL PULLDOWN SPEED_LOW GPIO(55)
+PB6  TIM4_CH1  OUTPUT PUSHPULL PULLDOWN SPEED_LOW GPIO(56)
+PB7  TIM4_CH2  OUTPUT PUSHPULL PULLDOWN SPEED_LOW GPIO(57)
+
+# -----------------------------------------------------------------------
+# LED strip (WS2812B / NeoPixel)
+# PA8 → TIM1 CH1 AF1 → DMA2 Stream6 Ch0
+# -----------------------------------------------------------------------
+PA8 TIM1_CH1 OUTPUT PUSHPULL PULLDOWN SPEED_LOW GPIO(70)
+define HAL_WITH_NEOPIXEL 1
+
+# -----------------------------------------------------------------------
+# Status LED — PC15 active-low (Betaflight: LED 1 C15)
+# -----------------------------------------------------------------------
+PC15 OUTPUT OPENDRAIN GPIO(0)
+define HAL_GPIO_A_LED_PIN 0
+define HAL_GPIO_LED_ON    0
+
+# -----------------------------------------------------------------------
+# Beeper — PC14, inverted (active-low, push-pull)
+# Betaflight: beeper_inversion=ON, beeper_od=OFF
+# -----------------------------------------------------------------------
+PC14 OUTPUT PUSHPULL GPIO(80)
+define HAL_BUZZER_PIN 80
+define HAL_BUZZER_ON  0
+
+# -----------------------------------------------------------------------
+# VTX power control — PB0 (PINIO1, Betaflight USER box 40 "VTX POWER")
+# Expose as a GPIO relay; map to SERVOn_FUNCTION=166 in parameters
+# -----------------------------------------------------------------------
+PB0 OUTPUT PUSHPULL GPIO(81)
+
+# -----------------------------------------------------------------------
+# ADC — ADC3 instance (PC0..PC2 are ADC3 channels on STM32F722)
+# PC0 = ADC3_IN10 (CURR)
+# PC1 = ADC3_IN11 (VBAT)
+# PC2 = ADC3_IN12 (RSSI)
+#
+# Voltage divider: 10 kΩ + 1 kΩ → ratio 11:1
+#   VBAT_MULT = 11.0   (calibrate against known voltage)
+#
+# Current sensor: ibata_scale=170 in Betaflight
+#   BF formula: mA = ibata_scale * adc_mV / 10
+#   At 3300 mV full scale: Imax = 170 * 3300/10 = 56.1 A
+#   ArduPilot BATT_AMP_PERVLT = 56.1 / 3.3 = 17.0 A/V
+# -----------------------------------------------------------------------
+PC1 ADC3 INPUT GPIO(12)
+PC0 ADC3 INPUT GPIO(13)
+PC2 ADC3 INPUT GPIO(14)
+
+define HAL_DEFAULT_BATT_VOLT_PIN   12
+define HAL_DEFAULT_BATT_CURR_PIN   13
+define HAL_BATT_VOLT_SCALE         11.0
+define HAL_BATT_CURR_SCALE         17.0
+
+# RSSI analog input on PC2
+define BOARD_RSSI_ANA_PIN 14
+
+# -----------------------------------------------------------------------
+# DMA channel assignments (explicit to avoid auto-allocation conflicts)
+#
+# SPI1 (ICM42688P):
+#   RX: DMA2 Stream2 Ch3 (or Stream0 Ch3)
+#   TX: DMA2 Stream3 Ch3 (or Stream5 Ch3)
+# ADC3:
+#   DMA2 Stream0 Ch2
+# Motors use DMA1 streams 0,2,3,4,5,6 and DMA2 streams 4,7
+# LED strip uses DMA2 Stream6 Ch0
+# -----------------------------------------------------------------------
+DMA_PRIORITY TIM3_CH4 TIM3_CH1 TIM2_CH2 TIM2_CH1 TIM8_CH3 TIM8_CH4 TIM4_CH1 TIM4_CH2 TIM1_CH1 SPI1_RX SPI1_TX SPI2_RX SPI2_TX SPI3_RX SPI3_TX ADC3
+
+# -----------------------------------------------------------------------
+# Default RC input — SERIAL1 (USART1) with SBUS inverted RX
+# ELRS/CRSF users change SERIAL1_PROTOCOL to 23 and BAUD to 420
+# -----------------------------------------------------------------------
+define HAL_OTG1_PROTOCOL SerialProtocol_None
+define DEFAULT_SERIAL1_PROTOCOL SerialProtocol_RCIN
+define DEFAULT_SERIAL1_BAUD 100000
+
+# -----------------------------------------------------------------------
+# Compass — no onboard compass; auto-detection on I2C1 for external
+# -----------------------------------------------------------------------
+define BOARD_COMPASS_COUNT 0
+define HAL_COMPASS_AUTO_ROT_DEFAULT 2
+
+# -----------------------------------------------------------------------
+# MAG bus assignment (external compass, if fitted on I2C1)
+# -----------------------------------------------------------------------
+define HAL_COMPASS_BUS_DEFAULT 0
+
+# -----------------------------------------------------------------------
+# Enable MSP for DJI OSD / goggles on any UART
+# -----------------------------------------------------------------------
+define HAL_MSP_ENABLED 1
+
+# -----------------------------------------------------------------------
+# Disable features not needed on a 20x20 mini FC
+# -----------------------------------------------------------------------
+define HAL_BARO_ALLOW_INIT_NO_BARO 1
+define AP_TERRAIN_AVAILABLE 0
