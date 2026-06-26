@@ -35,9 +35,10 @@ FLASH_SIZE_KB 512
 # Bootloader occupies first 32 KB (sectors 0+1 on STM32F722)
 FLASH_RESERVE_START_KB 32
 
-# EEPROM emulation in flash sector 2 (16 KB at 0x08008000)
+# EEPROM emulation in flash sectors 2+3 (16 KB each at 0x08008000).
+# Max storage for a 16 KB sector is 15360 (driver requires < page size).
 STORAGE_FLASH_PAGE 2
-define HAL_STORAGE_SIZE 16384
+define HAL_STORAGE_SIZE 15360
 
 # USB strings
 USB_STRING_MANUFACTURER "Flywoo"
