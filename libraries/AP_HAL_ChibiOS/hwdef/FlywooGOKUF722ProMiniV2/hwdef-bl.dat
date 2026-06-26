@@ -20,7 +20,8 @@
 # -----------------------------------------------------------------------
 # MCU
 # -----------------------------------------------------------------------
-MCU STM32F7xx STM32F722xx
+# F722 silicon uses ArduPilot's STM32F732xx module (identical pinout/clocks)
+MCU STM32F7xx STM32F732xx
 
 APJ_BOARD_ID AP_HW_FLYWOOF722PROMINI_V2
 
