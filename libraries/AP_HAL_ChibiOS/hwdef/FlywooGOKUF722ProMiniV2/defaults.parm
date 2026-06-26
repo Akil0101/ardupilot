@@ -14,8 +14,8 @@ FRAME_TYPE 1    # 1=X
 # IMPORTANT: Calibrate BATT_VOLT_MULT against a known voltage before flight.
 # -----------------------------------------------------------------------
 BATT_MONITOR 4          # Analog voltage + current
-BATT_VOLT_PIN 12        # GPIO12 → PC1 → ADC3_IN11
-BATT_CURR_PIN 13        # GPIO13 → PC0 → ADC3_IN10
+BATT_VOLT_PIN 11        # ADC3 channel 11 → PC1 (VBAT)
+BATT_CURR_PIN 10        # ADC3 channel 10 → PC0 (CURR)
 BATT_VOLT_MULT 11.0
 BATT_AMP_PERVLT 17.0
 BATT_AMP_OFFSET 0.0
@@ -25,7 +25,7 @@ BATT_CAPACITY 1300      # Adjust for your battery
 # INS / IMU — ICM42688P
 # Fast sampling: gyro at 8 kHz, accel at 4 kHz
 # -----------------------------------------------------------------------
-INS_FAST_SAMPLE 3
+INS_FAST_SAMPLE 1
 INS_GYRO_FILTER 120
 INS_ACCEL_FILTER 40
 INS_LOG_BAT_MASK 3
@@ -162,6 +162,6 @@ INS_HNTCH_OPTS 2        # double-notch
 # RSSI
 # -----------------------------------------------------------------------
 RSSI_TYPE 1             # 1 = Analog pin
-RSSI_ANA_PIN 14         # GPIO14 → PC2 → ADC3_IN12
+RSSI_ANA_PIN 12         # ADC3 channel 12 → PC2 (RSSI)
 RSSI_PIN_LOW 0
 RSSI_PIN_HIGH 3.3
