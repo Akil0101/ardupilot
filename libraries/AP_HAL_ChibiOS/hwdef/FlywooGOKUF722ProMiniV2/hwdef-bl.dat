@@ -1,26 +1,18 @@
 # Bootloader hwdef for Flywoo GOKU F722 PRO MINI V2
 #
-# This generates the ArduPilot stm32-based bootloader that:
-#   - Exposes USB DFU-compatible interface (AP_USBDFU bootloader)
-#   - Loads firmware via Mission Planner / STM32CubeProgrammer
-#   - Falls through to application after timeout if no upload in progress
+# Produces the ArduPilot bootloader that:
+#   - exposes a USB DFU-compatible upload interface
+#   - accepts firmware from Mission Planner / uploader.py
+#   - jumps to the application after a short wait
 #
 # Flash layout (STM32F722RET6, 512 KB):
-#   Sector 0: 0x08000000 – 0x08003FFF  (16 KB)  ← bootloader part 1
-#   Sector 1: 0x08004000 – 0x08007FFF  (16 KB)  ← bootloader part 2
-#   Sector 2: 0x08008000 – 0x0800BFFF  (16 KB)  ← EEPROM / parameters
-#   Sector 3: 0x0800C000 – 0x0800FFFF  (16 KB)  ← EEPROM / parameters
-#   Sector 4: 0x08010000 – 0x0801FFFF  (64 KB)  ← application start
-#   Sector 5: 0x08020000 – 0x0803FFFF  (128 KB) ← application
-#   Sector 6: 0x08040000 – 0x0805FFFF  (128 KB) ← application
-#   Sector 7: 0x08060000 – 0x0807FFFF  (128 KB) ← application
-#
-# Bootloader occupies sectors 0+1 (32 KB total → FLASH_RESERVE_START_KB 32)
+#   0x08000000  sectors 0-1  32 KB  bootloader   (FLASH_BOOTLOADER_LOAD_KB)
+#   0x08008000  sectors 2-3  32 KB  EEPROM/params
+#   0x08010000  sectors 4-7 384 KB  application
 
 # -----------------------------------------------------------------------
-# MCU
+# MCU — F722 silicon uses ArduPilot's STM32F732xx module
 # -----------------------------------------------------------------------
-# F722 silicon uses ArduPilot's STM32F732xx module (identical pinout/clocks)
 MCU STM32F7xx STM32F732xx
 
 APJ_BOARD_ID AP_HW_FLYWOOF722PROMINI_V2
@@ -28,13 +20,13 @@ APJ_BOARD_ID AP_HW_FLYWOOF722PROMINI_V2
 OSCILLATOR_HZ 8000000
 FLASH_SIZE_KB 512
 
-# Bootloader lives in first 32 KB
+# Bootloader sits at the start of flash; the app is loaded at +32 KB
+FLASH_RESERVE_START_KB 0
 FLASH_BOOTLOADER_LOAD_KB 32
 
 # USB strings shown in DFU / Mission Planner device list
 USB_STRING_MANUFACTURER "Flywoo"
-USB_STRING_PRODUCT "GOKU-F722-Pro-Mini-V2 BL"
-USB_STRING_NEWLINE_CONVENTION False
+USB_STRING_PRODUCT "GOKU-F722-Pro-Mini-V2-BL"
 
 # -----------------------------------------------------------------------
 # USB — required for DFU firmware upload
@@ -43,7 +35,7 @@ PA11 OTG_FS_DM OTG1
 PA12 OTG_FS_DP OTG1
 
 # -----------------------------------------------------------------------
-# UART1 — also supports firmware upload via serial (Mission Planner)
+# UART1 — also supports firmware upload via serial
 # -----------------------------------------------------------------------
 PA9  USART1_TX USART1
 PA10 USART1_RX USART1
@@ -51,38 +43,13 @@ PA10 USART1_RX USART1
 SERIAL_ORDER OTG1 USART1
 
 # -----------------------------------------------------------------------
-# Status LED — PC15 active-low
-# Blinks during bootloader wait period; solid during upload
+# Status LED — PC15 active-low; blinks while the bootloader waits
 # -----------------------------------------------------------------------
-PC15 OUTPUT OPENDRAIN GPIO(0)
-define HAL_GPIO_A_LED_PIN 0
-define HAL_GPIO_LED_ON    0
+PC15 LED_BOOTLOADER OUTPUT LOW
+define HAL_LED_ON 0
 
 # -----------------------------------------------------------------------
-# Beeper — PC14 active-low push-pull
-# Sounds on successful firmware flash
+# Bootloader keeps storage empty (params live in the application region)
 # -----------------------------------------------------------------------
-PC14 OUTPUT PUSHPULL GPIO(1)
-define HAL_BUZZER_PIN 1
-define HAL_BUZZER_ON  0
-
-# -----------------------------------------------------------------------
-# Bootloader wait time before jumping to application
-# 5 000 ms gives time for Mission Planner to connect after power-on
-# -----------------------------------------------------------------------
-define HAL_BOOTLOADER_WAIT_MS 5000
-
-# -----------------------------------------------------------------------
-# SPI1 — needed only to detect blank flash; keep minimal for BL size
-# Leave SPI2/SPI3 unconfigured to save space
-# -----------------------------------------------------------------------
-PA5 SPI1_SCK  SPI1
-PA6 SPI1_MISO SPI1
-PA7 SPI1_MOSI SPI1
-PA4 CS1 OUTPUT PULLUP   # ICM42688P CS — de-assert during bootloader
-
-# -----------------------------------------------------------------------
-# I2C1 — not used in bootloader; configure pins as floating input
-# -----------------------------------------------------------------------
-PB8 INPUT FLOATING
-PB9 INPUT FLOATING
+define HAL_USE_EMPTY_STORAGE 1
+define HAL_STORAGE_SIZE 16384
